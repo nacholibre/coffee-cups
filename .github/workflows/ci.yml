@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl
+          tools: composer:v2
+
+      - name: Install PHP-CS-Fixer
+        run: composer install --working-dir=.php-cs-fixer
+
+      - name: Run PHP-CS-Fixer
+        run: .php-cs-fixer/vendor/bin/php-cs-fixer fix --dry-run --diff
+
+  analyze:
+    name: Static Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Install PHPStan
+        run: composer install --working-dir=.phpstan
+
+      - name: Run PHPStan
+        run: .phpstan/vendor/bin/phpstan analyze
+
+  test-unit:
+    name: Unit Tests (PHP ${{ matrix.php-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2', '8.3', '8.4']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: curl
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run unit tests
+        run: ./vendor/bin/phpunit --testsuite unit
+
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: curl
+          tools: composer:v2
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Build and start CUPS server
+        run: |
+          docker build -t cups-test -f docker/Dockerfile docker/
+          docker run -d --name cups-server -p 6631:631 cups-test
+          echo "Waiting for CUPS to be ready..."
+          for i in {1..30}; do
+            if docker exec cups-server lpstat -r 2>/dev/null; then
+              echo "CUPS is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          docker logs cups-server
+
+      - name: Run integration tests
+        env:
+          CUPS_HOST: localhost
+          CUPS_PORT: 6631
+        run: ./vendor/bin/phpunit --testsuite integration --group integration
+
+      - name: CUPS logs on failure
+        if: failure()
+        run: docker logs cups-server

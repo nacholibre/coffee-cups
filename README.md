@@ -2,6 +2,7 @@
 
 A simple, modern PHP library for CUPS IPP (Internet Printing Protocol) communication with **zero dependencies**.
 
+[![CI](https://github.com/nacholibre/coffee-cups/actions/workflows/ci.yml/badge.svg)](https://github.com/nacholibre/coffee-cups/actions/workflows/ci.yml)
 [![GitHub](https://img.shields.io/github/stars/nacholibre/coffee-cups?style=flat&logo=github)](https://github.com/nacholibre/coffee-cups)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.1-8892BF.svg)](https://php.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
