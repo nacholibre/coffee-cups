@@ -1,0 +1,31 @@
+# Composer
+/vendor/
+composer.lock
+/.php-cs-fixer/vendor/
+/.php-cs-fixer/composer.lock
+/.phpstan/vendor/
+/.phpstan/composer.lock
+
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+/coverage/
+.phpunit.result.cache
+.phpunit.cache/
+
+# Linter
+.php-cs-fixer.cache
+
+# Build
+/build/
+/dist/
+
