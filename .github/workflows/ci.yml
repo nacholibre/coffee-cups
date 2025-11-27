@@ -101,15 +101,28 @@ jobs:
         run: |
           docker build -t cups-test -f docker/Dockerfile docker/
           docker run -d --name cups-server -p 6631:631 cups-test
-          echo "Waiting for CUPS to be ready..."
+          echo "Waiting for CUPS scheduler to be ready..."
           for i in {1..30}; do
             if docker exec cups-server lpstat -r 2>/dev/null; then
-              echo "CUPS is ready!"
+              echo "CUPS scheduler is running!"
               break
             fi
-            echo "Waiting... ($i/30)"
+            echo "Waiting for scheduler... ($i/30)"
             sleep 2
           done
+          echo "Waiting for TestPrinter to be available..."
+          for i in {1..30}; do
+            if docker exec cups-server lpstat -p TestPrinter 2>/dev/null; then
+              echo "TestPrinter is ready!"
+              break
+            fi
+            echo "Waiting for printer... ($i/30)"
+            sleep 2
+          done
+          echo "=== CUPS Status ==="
+          docker exec cups-server lpstat -a || true
+          docker exec cups-server lpstat -p || true
+          echo "=== CUPS Logs ==="
           docker logs cups-server
 
       - name: Run integration tests
